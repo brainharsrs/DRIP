@@ -76,7 +76,23 @@ const _accounts = [
 
 final _http = HttpClient();
 
-Future<void> main() async {
+Future<void> main(List<String> args) async {
+  // `--export arquivo.json`: só grava o catálogo no formato REST do
+  // Firestore (para enviar a outro projeto) e sai, sem tocar nos emuladores.
+  final exportAt = args.indexOf('--export');
+  if (exportAt >= 0 && exportAt + 1 < args.length) {
+    final now = DateTime.now();
+    final out = {
+      for (final b in DemoCatalog.brands)
+        'brands/${b.id}': _fields(_brandMap(b)),
+      for (final d in DemoCatalog.drops(now))
+        'drops/${d.id}': _fields(_dropMap(d)),
+    };
+    File(args[exportAt + 1]).writeAsStringSync(jsonEncode(out));
+    stdout.writeln('Catálogo exportado: ${out.length} documentos.');
+    return;
+  }
+
   stdout.writeln('Aguardando os emuladores do Firebase...');
   await _waitFor(_authPort, 'Authentication');
   await _waitFor(_firestorePort, 'Firestore');
@@ -201,12 +217,9 @@ Future<void> _seedNotifications(
 
 /// Devolve o UID da conta, criando-a se ainda não existir.
 Future<String> _ensureAccount(_TestAccount a) async {
-  final found = await _auth(
-    'projects/$_project/accounts:lookup',
-    {
-      'email': [a.email],
-    },
-  );
+  final found = await _auth('projects/$_project/accounts:lookup', {
+    'email': [a.email],
+  });
   final users = found['users'] as List?;
   String uid;
   if (users != null && users.isNotEmpty) {
