@@ -1,0 +1,96 @@
+rules_version = '2';
+
+// Regras de segurança do DRIP.
+//
+// Catálogo (marcas e lançamentos): qualquer pessoa lê; só a equipe escreve.
+// Dados de cada pessoa: só a própria pessoa lê e escreve, e só nos campos
+// que o aplicativo usa. Tudo o que não está listado aqui é negado.
+//
+// "Equipe" = conta com a marcação `admin: true` (custom claim). Como criar
+// essa marcação: veja FIREBASE.md.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return signedIn() && request.auth.uid == uid;
+    }
+
+    function isAdmin() {
+      return signedIn() && request.auth.token.admin == true;
+    }
+
+    // Lista de textos curtos, com tamanho máximo (ou campo ausente).
+    function listOrAbsent(data, field, max) {
+      return !(field in data)
+        || (data[field] is list && data[field].size() <= max);
+    }
+
+    function textOrAbsent(data, field, max) {
+      return !(field in data)
+        || (data[field] is string && data[field].size() <= max);
+    }
+
+    // O documento de uma pessoa só pode ter estes campos, nestes formatos.
+    function validUser(data) {
+      return data.keys().hasOnly([
+          'name', 'email', 'createdAt', 'updatedAt',
+          'wantList', 'following', 'interests', 'readActivity', 'notifOff'
+        ])
+        && textOrAbsent(data, 'name', 60)
+        && textOrAbsent(data, 'email', 320)
+        && listOrAbsent(data, 'wantList', 1000)
+        && listOrAbsent(data, 'following', 500)
+        && listOrAbsent(data, 'interests', 20)
+        && listOrAbsent(data, 'notifOff', 20)
+        && listOrAbsent(data, 'readActivity', 5000)
+        && data.updatedAt == request.time;
+    }
+
+    // ── Catálogo ────────────────────────────────────────────────────────
+    match /brands/{brandId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /drops/{dropId} {
+      // Rascunhos (published != true) só aparecem para a equipe.
+      allow read: if resource.data.published == true || isAdmin();
+      allow write: if isAdmin();
+    }
+
+    // ── Dados privados de cada pessoa ───────────────────────────────────
+    match /users/{uid} {
+      allow get: if isOwner(uid);
+      allow list: if false;
+      allow create: if isOwner(uid) && validUser(request.resource.data);
+      allow update: if isOwner(uid)
+        && validUser(request.resource.data)
+        // A data de criação não muda depois de gravada.
+        && (!('createdAt' in resource.data)
+            || request.resource.data.createdAt == resource.data.createdAt);
+      allow delete: if isOwner(uid);
+
+      // Aparelhos registrados para receber notificações.
+      match /tokens/{tokenId} {
+        allow read, delete: if isOwner(uid);
+        allow create, update: if isOwner(uid)
+          && request.resource.data.keys().hasOnly(['id', 'platform', 'updatedAt'])
+          && request.resource.data.id == tokenId
+          && request.resource.data.platform is string
+          && request.resource.data.platform.size() <= 20
+          && request.resource.data.updatedAt == request.time;
+      }
+
+      // Avisos gravados pelo servidor. O aplicativo só lê e apaga; quem
+      // escreve é o backend (Admin SDK, que não passa por estas regras).
+      match /notifications/{notificationId} {
+        allow read, delete: if isOwner(uid);
+        allow create, update: if false;
+      }
+    }
+  }
+}

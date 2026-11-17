@@ -1,0 +1,17 @@
+rules_version = '2';
+
+// Imagens do catálogo (fotos de lançamentos, logos e capas de marcas).
+// Qualquer pessoa vê; só a equipe (`admin: true`) envia, e só imagens de
+// até 5 MB. O aplicativo não envia arquivos: ele só mostra as URLs gravadas
+// em `drops.imageUrls`, `brands.logoUrl` e `brands.coverUrl`.
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /catalog/{allPaths=**} {
+      allow read: if true;
+      allow write: if request.auth != null
+        && request.auth.token.admin == true
+        && request.resource.size < 5 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*');
+    }
+  }
+}

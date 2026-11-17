@@ -1,0 +1,47 @@
+name: drip
+description: "DRIP - The radar for drops you can't miss."
+publish_to: 'none'
+
+# versão do app + número do build (Android versionCode / iOS CFBundleVersion)
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.14.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  material_ui: ^1.1.0
+
+  # Estado e navegação
+  flutter_riverpod: ^3.5.0
+  go_router: ^18.1.4
+
+  # Persistência local, links externos e imagens
+  shared_preferences: ^2.5.6
+  url_launcher: ^6.3.3
+  cached_network_image: ^4.0.7
+
+  # Firebase (só é inicializado depois de `flutterfire configure`)
+  firebase_core: ^5.1.0
+  firebase_auth: ^7.0.1
+  cloud_firestore: ^7.1.0
+  firebase_messaging: ^17.0.1
+  crypto: ^3.0.8
+  google_sign_in: 6.2.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
+  shaders:
+    - shaders/liquid_glass.frag
+  assets:
+    - assets/branding/
+  fonts:
+    - family: Archivo
+      fonts:
+        - asset: assets/fonts/Archivo-Variable.ttf

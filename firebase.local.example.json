@@ -1,0 +1,15 @@
+{
+  "FB_PROJECT_ID": "seu-projeto",
+  "FB_SENDER_ID": "000000000000",
+  "FB_STORAGE_BUCKET": "seu-projeto.firebasestorage.app",
+  "FB_AUTH_DOMAIN": "seu-projeto.firebaseapp.com",
+  "FB_WEB_API_KEY": "",
+  "FB_WEB_APP_ID": "",
+  "FB_MEASUREMENT_ID": "",
+  "FB_ANDROID_API_KEY": "",
+  "FB_ANDROID_APP_ID": "",
+  "FB_IOS_API_KEY": "",
+  "FB_IOS_APP_ID": "",
+  "FB_IOS_CLIENT_ID": "",
+  "FB_IOS_BUNDLE_ID": ""
+}
